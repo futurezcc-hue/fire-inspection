@@ -35,3 +35,8 @@ export function saveHistory(entry) {
 export function getFolder(folderName) {
   return getHistory().find((e) => e.folderName === folderName)
 }
+
+export function deleteFolder(folderName) {
+  const list = getHistory().filter((e) => e.folderName !== folderName)
+  localStorage.setItem(KEY, JSON.stringify(list))
+}

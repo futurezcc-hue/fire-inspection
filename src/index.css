@@ -1,1 +1,25 @@
 @import "tailwindcss";
+
+@keyframes swipe-open {
+  0%   { transform: translateX(0); }
+  60%  { transform: translateX(-88px); }
+  80%  { transform: translateX(-76px); }
+  100% { transform: translateX(-80px); }
+}
+
+@keyframes swipe-close {
+  0%   { transform: translateX(-80px); }
+  60%  { transform: translateX(8px); }
+  80%  { transform: translateX(-4px); }
+  100% { transform: translateX(0); }
+}
+
+.swipe-open {
+  animation: swipe-open 0.45s ease-out forwards;
+  will-change: transform;
+}
+
+.swipe-close {
+  animation: swipe-close 0.45s ease-out forwards;
+  will-change: transform;
+}

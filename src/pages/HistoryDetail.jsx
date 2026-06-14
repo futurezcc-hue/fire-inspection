@@ -1,6 +1,6 @@
 import { getFolder } from '../utils/history'
 
-export default function HistoryDetail({ folderName, onBack }) {
+export default function HistoryDetail({ folderName, onBack, onOpenShop }) {
   const entry = getFolder(folderName)
 
   if (!entry) {
@@ -19,9 +19,13 @@ export default function HistoryDetail({ folderName, onBack }) {
 
   const inspections = entry.inspections || []
 
+  function countPhotos(ins) {
+    if (!ins.photos) return 0
+    return Object.values(ins.photos).reduce((sum, arr) => sum + (arr?.length || 0), 0)
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 顶部导航 */}
       <header className="bg-slate-800 text-white px-4 py-3">
         <div className="flex items-center gap-3">
           <button
@@ -45,38 +49,43 @@ export default function HistoryDetail({ folderName, onBack }) {
           </div>
         ) : (
           <div className="space-y-3">
-            {inspections.map((ins, i) => (
-              <div
-                key={i}
-                className="rounded-xl bg-white border border-gray-100 p-4"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-lg">📋</span>
-                  <span className="font-semibold text-gray-800 text-sm">
-                    {ins.docName}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-400">店铺：{ins.shopName}</p>
-                <p className="text-xs text-gray-400">地址：{ins.shopAddress}</p>
-                <p className="text-xs text-gray-400">网格：{ins.gridName}</p>
-                {ins.photos && (
-                  <div className="flex gap-1.5 mt-2 flex-wrap">
-                    {Object.entries(ins.photos).map(([cat, arr]) => (
-                      <span
-                        key={cat}
-                        className={`text-xs px-2 py-0.5 rounded-md ${
-                          arr.length > 0
-                            ? 'bg-green-50 text-green-600'
-                            : 'bg-gray-100 text-gray-400'
-                        }`}
-                      >
-                        {cat} {arr.length > 0 ? arr.length : '0'}
-                      </span>
-                    ))}
+            {inspections.map((ins, i) => {
+              const totalPhotos = countPhotos(ins)
+              const isCompleted = totalPhotos > 0
+
+              return (
+                <button
+                  key={i}
+                  onClick={() => onOpenShop(ins)}
+                  className={`w-full text-left rounded-xl border-2 transition-all duration-150 active:scale-[0.96] ${
+                    isCompleted
+                      ? 'border-green-200 bg-green-50/30 hover:border-green-400 hover:shadow-md'
+                      : 'border-gray-100 bg-white hover:border-slate-400 hover:shadow-md'
+                  }`}
+                >
+                  <div className="flex items-center justify-between px-4 py-3.5">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg shrink-0 ${
+                        isCompleted ? 'bg-green-500 text-white' : 'bg-slate-50'
+                      }`}>
+                        {isCompleted ? '✓' : '🏪'}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-gray-800 text-sm truncate">{ins.docName}</p>
+                        <p className="text-xs text-gray-400 truncate">{ins.shopAddress}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0 ml-2">
+                      {isCompleted && (
+                        <span className="text-xs px-1.5 py-0.5 rounded bg-green-100 text-green-600 font-medium">已完成</span>
+                      )}
+                      <span className="text-xs text-gray-400">{totalPhotos} 张</span>
+                      <span className="text-slate-400 text-sm">›</span>
+                    </div>
                   </div>
-                )}
-              </div>
-            ))}
+                </button>
+              )
+            })}
           </div>
         )}
       </main>

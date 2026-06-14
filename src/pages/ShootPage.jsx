@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { savePhoto, deletePhoto } from '../utils/photos'
 
 const CATEGORIES = [
   '门店照',
@@ -9,7 +10,7 @@ const CATEGORIES = [
   '隐患照',
 ]
 
-export default function ShootPage({ document, onBack, onBackToGrid, onGoHome, onUpdateDocument }) {
+export default function ShootPage({ document, onBack, onBackToGrid, onGoHome, onUpdateDocument, onComplete, fromHistory, readonly }) {
   const [photos, setPhotos] = useState(document.photos || {})
   const [activeCategory, setActiveCategory] = useState(null)
   const [previewUrl, setPreviewUrl] = useState(null)
@@ -20,12 +21,14 @@ export default function ShootPage({ document, onBack, onBackToGrid, onGoHome, on
     fileInputRef.current.click()
   }
 
-  function handleFileChange(e) {
+  async function handleFileChange(e) {
     const file = e.target.files[0]
     if (!file || !activeCategory) return
 
+    const id = Date.now().toString()
+    await savePhoto(id, file)
     const url = URL.createObjectURL(file)
-    const newPhoto = { id: Date.now(), url, name: file.name }
+    const newPhoto = { id, url }
 
     const updated = {
       ...photos,
@@ -34,12 +37,12 @@ export default function ShootPage({ document, onBack, onBackToGrid, onGoHome, on
     setPhotos(updated)
     onUpdateDocument({ ...document, photos: updated })
 
-    // 重置 input 以便重复拍摄同一分类
     fileInputRef.current.value = ''
     setActiveCategory(null)
   }
 
-  function handleDelete(category, photoId) {
+  async function handleDelete(category, photoId) {
+    await deletePhoto(photoId)
     const updated = {
       ...photos,
       [category]: photos[category].filter((p) => p.id !== photoId),
@@ -93,27 +96,29 @@ export default function ShootPage({ document, onBack, onBackToGrid, onGoHome, on
       </header>
 
       {/* 主体内容 */}
-      <main className="max-w-md mx-auto px-4 py-5 pb-8">
+      <main className="max-w-md mx-auto px-4 py-5">
         {/* 步骤提示 */}
-        <div className="flex items-center gap-3 mb-5">
-          <button onClick={onBackToGrid} className="flex items-center gap-1.5 active:scale-95 transition-transform">
-            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-green-500 text-white text-xs font-bold">✓</span>
-            <span className="text-sm text-gray-400">选择网格</span>
-          </button>
-          <div className="flex-1 h-px bg-gray-200" />
-          <button onClick={onBack} className="flex items-center gap-1.5 active:scale-95 transition-transform">
-            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-green-500 text-white text-xs font-bold">✓</span>
-            <span className="text-sm text-gray-400">选择店铺</span>
-          </button>
-          <div className="flex-1 h-px bg-gray-200" />
-          <div className="flex items-center gap-1.5">
-            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-700 text-white text-xs font-bold">3</span>
-            <span className="text-sm font-medium text-gray-800">拍摄</span>
+        {!fromHistory && (
+          <div className="flex items-center gap-3 mb-5">
+            <button onClick={onBackToGrid} className="flex items-center gap-1.5 active:scale-95 transition-transform">
+              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-green-500 text-white text-xs font-bold">✓</span>
+              <span className="text-sm text-gray-400">选择网格</span>
+            </button>
+            <div className="flex-1 h-px bg-gray-200" />
+            <button onClick={onBack} className="flex items-center gap-1.5 active:scale-95 transition-transform">
+              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-green-500 text-white text-xs font-bold">✓</span>
+              <span className="text-sm text-gray-400">选择店铺</span>
+            </button>
+            <div className="flex-1 h-px bg-gray-200" />
+            <div className="flex items-center gap-1.5">
+              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-700 text-white text-xs font-bold">3</span>
+              <span className="text-sm font-medium text-gray-800">拍摄</span>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* 文档信息 */}
-        <div className="rounded-xl bg-white border border-gray-100 p-4 mb-5">
+        <div className="rounded-xl bg-white border border-gray-100 px-4 py-3.5 mb-5">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-base">📋</span>
             <span className="font-semibold text-gray-800 text-sm">{document.docName}</span>
@@ -131,8 +136,10 @@ export default function ShootPage({ document, onBack, onBackToGrid, onGoHome, on
             return (
               <div key={cat}>
                 <button
-                  onClick={() => handleCapture(cat)}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-100 bg-white hover:border-slate-400 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.96] active:bg-slate-50 transition-all duration-150"
+                  onClick={() => !readonly && handleCapture(cat)}
+                  className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border border-gray-100 bg-white transition-all duration-150 ${
+                    readonly ? 'cursor-default' : 'hover:border-slate-400 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.96] active:bg-slate-50'
+                  }`}
                 >
                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg shrink-0 ${
                     hasPhotos ? 'bg-slate-700 text-white' : 'bg-gray-100'
@@ -146,7 +153,7 @@ export default function ShootPage({ document, onBack, onBackToGrid, onGoHome, on
                   <span className={`text-xs px-2 py-1 rounded-md ${
                     hasPhotos ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-400'
                   }`}>
-                    {hasPhotos ? '已拍摄' : '点击拍摄'}
+                    {hasPhotos ? '已拍摄' : readonly ? '未拍摄' : '点击拍摄'}
                   </span>
                 </button>
 
@@ -161,15 +168,17 @@ export default function ShootPage({ document, onBack, onBackToGrid, onGoHome, on
                           className="w-16 h-16 rounded-lg object-cover cursor-pointer"
                           onClick={() => setPreviewUrl(photo.url)}
                         />
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleDelete(cat, photo.id)
-                          }}
-                          className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center active:scale-90"
-                        >
-                          ×
-                        </button>
+                        {!readonly && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDelete(cat, photo.id)
+                            }}
+                            className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center active:scale-90"
+                          >
+                            ×
+                          </button>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -179,14 +188,23 @@ export default function ShootPage({ document, onBack, onBackToGrid, onGoHome, on
           })}
         </div>
 
-        {/* 完成按钮 */}
+        {/* 底部按钮 */}
         <div className="mt-8">
-          <button
-            onClick={onBack}
-            className="w-full py-3.5 rounded-xl text-white font-semibold text-base bg-slate-700 hover:bg-slate-600 hover:shadow-xl hover:-translate-y-0.5 active:scale-[0.96] active:bg-slate-800 shadow-lg shadow-slate-200 transition-all duration-150"
-          >
-            <span className="tracking-widest">完成巡查</span>
-          </button>
+          {fromHistory ? (
+            <button
+              onClick={onBack}
+              className="w-full py-3.5 rounded-xl text-white font-semibold text-base bg-slate-700 hover:bg-slate-600 hover:shadow-xl hover:-translate-y-0.5 active:scale-[0.96] active:bg-slate-800 shadow-lg shadow-slate-200 transition-all duration-150"
+            >
+              <span className="tracking-widest">返回</span>
+            </button>
+          ) : (
+            <button
+              onClick={onComplete}
+              className="w-full py-3.5 rounded-xl text-white font-semibold text-base bg-slate-700 hover:bg-slate-600 hover:shadow-xl hover:-translate-y-0.5 active:scale-[0.96] active:bg-slate-800 shadow-lg shadow-slate-200 transition-all duration-150"
+            >
+              <span className="tracking-widest">完成巡查</span>
+            </button>
+          )}
         </div>
       </main>
     </div>

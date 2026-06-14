@@ -1,10 +1,20 @@
+import { useEffect } from 'react'
 import { getShopsByGrid, getGridName } from '../data/shops'
 
 const CATEGORIES = ['门店照', '灭火器照', '烟雾感应器照', '应急灯安全出口灯照', '现场照片', '隐患照']
 
-export default function ShopList({ gridId, onBack, onSelectShop, onGoHome, completedMap }) {
+export default function ShopList({ gridId, onBack, onSelectShop, onGoHome, completedMap, pendingMap, scrollToShop }) {
   const shops = getShopsByGrid(gridId)
   const gridName = getGridName(gridId)
+
+  useEffect(() => {
+    if (scrollToShop) {
+      const el = document.getElementById(`shop-${scrollToShop}`)
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+    }
+  }, [scrollToShop])
 
   function handleSelect(shop) {
     const docName = `${shop.name}_${shop.address}`
@@ -62,23 +72,36 @@ export default function ShopList({ gridId, onBack, onSelectShop, onGoHome, compl
         <div className="space-y-2.5">
           {shops.map((shop) => {
             const isCompleted = completedMap[shop.name] || false
+            const isPending = pendingMap[shop.name] || false
+
+            let borderClass = 'border-gray-100 bg-white hover:border-slate-400 hover:shadow-md hover:-translate-y-0.5 active:bg-slate-50 active:shadow-none'
+            let iconClass = 'bg-slate-50'
+            let icon = '🏪'
+            let badge = null
+
+            if (isCompleted) {
+              borderClass = 'border-green-200 bg-green-50/50 hover:border-green-400 hover:shadow-md hover:-translate-y-0.5 active:bg-green-100/50 active:shadow-none'
+              iconClass = 'bg-green-500 text-white'
+              icon = '✓'
+              badge = <span className="inline-block px-2 py-0.5 rounded-md bg-green-100 text-green-600 text-xs font-medium">已完成</span>
+            } else if (isPending) {
+              borderClass = 'border-amber-200 bg-amber-50/50 hover:border-amber-400 hover:shadow-md hover:-translate-y-0.5 active:bg-amber-100/50 active:shadow-none'
+              iconClass = 'bg-amber-500 text-white'
+              icon = '◷'
+              badge = <span className="inline-block px-2 py-0.5 rounded-md bg-amber-100 text-amber-600 text-xs font-medium">待完成</span>
+            }
 
             return (
               <button
                 key={shop.id}
+                id={`shop-${shop.name}`}
                 onClick={() => handleSelect(shop)}
-                className={`w-full text-left px-4 py-3.5 rounded-xl border-2 transition-all duration-150 active:scale-[0.96] ${
-                  isCompleted
-                    ? 'border-green-200 bg-green-50/50 hover:border-green-400 hover:shadow-md hover:-translate-y-0.5 active:bg-green-100/50 active:shadow-none'
-                    : 'border-gray-100 bg-white hover:border-slate-400 hover:shadow-md hover:-translate-y-0.5 active:bg-slate-50 active:shadow-none'
-                }`}
+                className={`w-full text-left px-4 py-3.5 rounded-xl border-2 transition-all duration-150 active:scale-[0.96] ${borderClass}`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg shrink-0 ${
-                      isCompleted ? 'bg-green-500 text-white' : 'bg-slate-50'
-                    }`}>
-                      {isCompleted ? '✓' : '🏪'}
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg shrink-0 ${iconClass}`}>
+                      {icon}
                     </div>
                     <div className="min-w-0">
                       <p className="font-semibold text-gray-800 text-sm truncate">
@@ -88,11 +111,7 @@ export default function ShopList({ gridId, onBack, onSelectShop, onGoHome, compl
                     </div>
                   </div>
                   <div className="shrink-0 ml-2 flex items-center gap-1.5">
-                    {isCompleted && (
-                      <span className="inline-block px-2 py-0.5 rounded-md bg-green-100 text-green-600 text-xs font-medium">
-                        已完成
-                      </span>
-                    )}
+                    {badge}
                     <span className="inline-block px-2 py-0.5 rounded-md bg-gray-100 text-gray-500 text-xs">
                       {shop.industry}
                     </span>
