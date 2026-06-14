@@ -1,13 +1,6 @@
 import { useState } from 'react'
 import { getHistory, getFolder } from '../utils/history'
-
-function getTodayStr() {
-  const d = new Date()
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
-}
+import { getTodayStr } from '../utils/time'
 
 export default function Landing({ onStart, onOpenHistory, onResumePending, onAbandonDay, pendingDay }) {
   const [folderName, setFolderName] = useState(getTodayStr())
