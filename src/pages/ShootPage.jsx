@@ -1,16 +1,89 @@
-const CATEGORIES = ['门店照', '灭火器照', '烟雾感应器照', '应急灯安全出口灯照', '现场照片', '隐患照']
+import { useState, useRef } from 'react'
 
-export default function ShootPage({ document, onBack }) {
+const CATEGORIES = [
+  '门店照',
+  '灭火器照',
+  '烟雾感应器照',
+  '应急灯安全出口灯照',
+  '现场照片',
+  '隐患照',
+]
+
+export default function ShootPage({ document, onBack, onBackToGrid, onGoHome, onUpdateDocument }) {
+  const [photos, setPhotos] = useState(document.photos || {})
+  const [activeCategory, setActiveCategory] = useState(null)
+  const [previewUrl, setPreviewUrl] = useState(null)
+  const fileInputRef = useRef(null)
+
+  function handleCapture(category) {
+    setActiveCategory(category)
+    fileInputRef.current.click()
+  }
+
+  function handleFileChange(e) {
+    const file = e.target.files[0]
+    if (!file || !activeCategory) return
+
+    const url = URL.createObjectURL(file)
+    const newPhoto = { id: Date.now(), url, name: file.name }
+
+    const updated = {
+      ...photos,
+      [activeCategory]: [...(photos[activeCategory] || []), newPhoto],
+    }
+    setPhotos(updated)
+    onUpdateDocument({ ...document, photos: updated })
+
+    // 重置 input 以便重复拍摄同一分类
+    fileInputRef.current.value = ''
+    setActiveCategory(null)
+  }
+
+  function handleDelete(category, photoId) {
+    const updated = {
+      ...photos,
+      [category]: photos[category].filter((p) => p.id !== photoId),
+    }
+    setPhotos(updated)
+    onUpdateDocument({ ...document, photos: updated })
+  }
+
+  const allCategories = CATEGORIES.reduce((acc, cat) => {
+    acc[cat] = photos[cat] || []
+    return acc
+  }, {})
+
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* 隐藏的相机输入 */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        capture="environment"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
+      {/* 照片预览弹窗 */}
+      {previewUrl && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+          onClick={() => setPreviewUrl(null)}
+        >
+          <img
+            src={previewUrl}
+            alt="preview"
+            className="max-w-full max-h-full object-contain"
+          />
+        </div>
+      )}
+
       {/* 顶部导航 */}
       <header className="bg-slate-800 text-white px-4 py-3 safe-top">
         <div className="flex items-center gap-3">
-          <button
-            onClick={onBack}
-            className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center text-sm active:scale-90 transition-transform"
-          >
-            ←
+          <button onClick={onGoHome} className="shrink-0 active:scale-90 transition-transform">
+            <img src="/logo.jpg" alt="logo" className="w-7 h-7 rounded-md object-cover" />
           </button>
           <div className="min-w-0">
             <h1 className="text-base font-bold leading-tight truncate">{document.docName}</h1>
@@ -20,18 +93,18 @@ export default function ShootPage({ document, onBack }) {
       </header>
 
       {/* 主体内容 */}
-      <main className="max-w-md mx-auto px-4 py-5">
+      <main className="max-w-md mx-auto px-4 py-5 pb-8">
         {/* 步骤提示 */}
         <div className="flex items-center gap-3 mb-5">
-          <div className="flex items-center gap-1.5 opacity-40">
+          <button onClick={onBackToGrid} className="flex items-center gap-1.5 active:scale-95 transition-transform">
             <span className="flex items-center justify-center w-6 h-6 rounded-full bg-green-500 text-white text-xs font-bold">✓</span>
             <span className="text-sm text-gray-400">选择网格</span>
-          </div>
+          </button>
           <div className="flex-1 h-px bg-gray-200" />
-          <div className="flex items-center gap-1.5 opacity-40">
+          <button onClick={onBack} className="flex items-center gap-1.5 active:scale-95 transition-transform">
             <span className="flex items-center justify-center w-6 h-6 rounded-full bg-green-500 text-white text-xs font-bold">✓</span>
             <span className="text-sm text-gray-400">选择店铺</span>
-          </div>
+          </button>
           <div className="flex-1 h-px bg-gray-200" />
           <div className="flex items-center gap-1.5">
             <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-700 text-white text-xs font-bold">3</span>
@@ -39,43 +112,80 @@ export default function ShootPage({ document, onBack }) {
           </div>
         </div>
 
-        <h2 className="text-base font-semibold text-gray-700 mb-3">巡查文档已创建</h2>
-
+        {/* 文档信息 */}
         <div className="rounded-xl bg-white border border-gray-100 p-4 mb-5">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-lg">📋</span>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-base">📋</span>
             <span className="font-semibold text-gray-800 text-sm">{document.docName}</span>
           </div>
-          <p className="text-xs text-gray-400">店铺：{document.shopName}</p>
-          <p className="text-xs text-gray-400">地址：{document.shopAddress}</p>
-          <p className="text-xs text-gray-400">网格：{document.gridName}</p>
+          <p className="text-xs text-gray-400">{document.shopAddress}</p>
         </div>
 
+        {/* 拍摄项目 */}
         <h2 className="text-base font-semibold text-gray-700 mb-3">拍摄项目</h2>
-        <div className="space-y-2">
-          {CATEGORIES.map((cat) => (
-            <div
-              key={cat}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-100 bg-white"
-            >
-              <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-lg shrink-0">
-                📷
+        <div className="space-y-2.5">
+          {CATEGORIES.map((cat) => {
+            const catPhotos = allCategories[cat] || []
+            const hasPhotos = catPhotos.length > 0
+
+            return (
+              <div key={cat}>
+                <button
+                  onClick={() => handleCapture(cat)}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-100 bg-white hover:border-slate-400 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.96] active:bg-slate-50 transition-all duration-150"
+                >
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg shrink-0 ${
+                    hasPhotos ? 'bg-slate-700 text-white' : 'bg-gray-100'
+                  }`}>
+                    {hasPhotos ? '✓' : '📷'}
+                  </div>
+                  <span className={`font-medium text-sm ${hasPhotos ? 'text-gray-800' : 'text-gray-500'}`}>
+                    {cat}
+                  </span>
+                  <div className="flex-1" />
+                  <span className={`text-xs px-2 py-1 rounded-md ${
+                    hasPhotos ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-400'
+                  }`}>
+                    {hasPhotos ? '已拍摄' : '点击拍摄'}
+                  </span>
+                </button>
+
+                {/* 照片缩略图 */}
+                {catPhotos.length > 0 && (
+                  <div className="flex gap-2 mt-2 overflow-x-auto pb-1">
+                    {catPhotos.map((photo) => (
+                      <div key={photo.id} className="relative shrink-0">
+                        <img
+                          src={photo.url}
+                          alt={cat}
+                          className="w-16 h-16 rounded-lg object-cover cursor-pointer"
+                          onClick={() => setPreviewUrl(photo.url)}
+                        />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDelete(cat, photo.id)
+                          }}
+                          className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center active:scale-90"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-              <span className="font-medium text-gray-700 text-sm">{cat}</span>
-              <div className="flex-1" />
-              <span className="text-xs px-2 py-1 rounded-md bg-gray-100 text-gray-400">
-                待拍摄
-              </span>
-            </div>
-          ))}
+            )
+          })}
         </div>
 
-        <div className="mt-6">
+        {/* 完成按钮 */}
+        <div className="mt-8">
           <button
-            disabled
-            className="w-full py-3.5 rounded-xl text-white font-semibold text-base bg-gray-300 cursor-not-allowed"
+            onClick={onBack}
+            className="w-full py-3.5 rounded-xl text-white font-semibold text-base bg-slate-700 hover:bg-slate-600 hover:shadow-xl hover:-translate-y-0.5 active:scale-[0.96] active:bg-slate-800 shadow-lg shadow-slate-200 transition-all duration-150"
           >
-            请完成所有拍摄项目
+            <span className="tracking-widest">完成巡查</span>
           </button>
         </div>
       </main>
