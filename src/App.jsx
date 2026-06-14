@@ -1,25 +1,14 @@
-import { useState, useEffect } from 'react'
-import { getGrids, getShopsByGrid } from './data/shops'
-import { saveHistory, getFolder } from './utils/history'
+import { useState } from 'react'
+import { getGrids } from './data/shops'
+import { saveHistory, getFolder, getPendingDay, savePendingDay, clearPendingDay } from './utils/history'
 import Landing from './pages/Landing'
 import ShopList from './pages/ShopList'
 import ShootPage from './pages/ShootPage'
 import HistoryDetail from './pages/HistoryDetail'
 
-function shopHasPhotos(shopName, completedMap) {
-  return completedMap[shopName] || false
-}
-
-function getGridProgress(grid, completedMap) {
-  const shops = grid.shops || []
-  const done = shops.filter((s) => completedMap[s.name]).length
-  return { done, total: shops.length }
-}
-
-function HomePage({ grids, onSelectGrid, onGoHome, completedMap }) {
+function HomePage({ grids, onSelectGrid, onGoHome, completedCount, onFinishDay }) {
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 顶部导航 */}
       <header className="bg-slate-800 text-white px-4 py-3 safe-top">
         <div className="flex items-center gap-3">
           <button onClick={onGoHome} className="shrink-0 active:scale-90 transition-transform">
@@ -32,9 +21,7 @@ function HomePage({ grids, onSelectGrid, onGoHome, completedMap }) {
         </div>
       </header>
 
-      {/* 主体内容 */}
       <main className="max-w-md mx-auto px-4 py-5">
-        {/* 步骤提示 */}
         <div className="flex items-center gap-3 mb-5">
           <div className="flex items-center gap-1.5">
             <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-700 text-white text-xs font-bold">1</span>
@@ -52,52 +39,45 @@ function HomePage({ grids, onSelectGrid, onGoHome, completedMap }) {
           </div>
         </div>
 
-        {/* 网格列表 */}
         <h2 className="text-base font-semibold text-gray-700 mb-3">请选择网格区域</h2>
 
         <div className="space-y-3">
-          {grids.map((grid) => {
-            const { done, total } = getGridProgress(grid, completedMap)
-            const pct = total > 0 ? Math.round((done / total) * 100) : 0
-
-            return (
-              <button
-                key={grid.id}
-                onClick={() => onSelectGrid(grid.id)}
-                className="w-full text-left px-4 py-3.5 rounded-xl border-2 border-gray-100 bg-white hover:border-slate-400 hover:shadow-md hover:-translate-y-0.5 transition-all duration-150 active:scale-[0.96] active:bg-slate-50 active:shadow-none"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center text-lg bg-gray-100">
-                      📍
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-800">{grid.name}</p>
-                      <p className="text-sm text-gray-400">{grid.shopCount} 家三小场所</p>
-                    </div>
+          {grids.map((grid) => (
+            <button
+              key={grid.id}
+              onClick={() => onSelectGrid(grid.id)}
+              className="w-full text-left px-4 py-3.5 rounded-xl border-2 border-gray-100 bg-white hover:border-slate-400 hover:shadow-md hover:-translate-y-0.5 transition-all duration-150 active:scale-[0.96] active:bg-slate-50 active:shadow-none"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center text-lg bg-gray-100">
+                    📍
                   </div>
-                  <span className="text-slate-400 text-sm">→</span>
-                </div>
-                {/* 进度条 */}
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-300 ${
-                        pct === 100 ? 'bg-green-500' : 'bg-slate-400'
-                      }`}
-                      style={{ width: `${pct}%` }}
-                    />
+                  <div>
+                    <p className="font-semibold text-gray-800">{grid.name}</p>
+                    <p className="text-sm text-gray-400">{grid.shopCount} 家三小场所</p>
                   </div>
-                  <span className={`text-xs font-medium ${
-                    pct === 100 ? 'text-green-600' : 'text-gray-400'
-                  }`}>
-                    {done}/{total}
-                  </span>
                 </div>
-              </button>
-            )
-          })}
+                <span className="text-slate-400 text-sm">→</span>
+              </div>
+            </button>
+          ))}
         </div>
+
+        {/* 完成今日巡查 */}
+        {completedCount > 0 && (
+          <div className="mt-8">
+            <button
+              onClick={onFinishDay}
+              className="w-full py-3.5 rounded-xl text-white font-semibold text-base bg-green-600 hover:bg-green-500 hover:shadow-xl hover:-translate-y-0.5 active:scale-[0.96] active:bg-green-700 shadow-lg shadow-green-200 transition-all duration-150"
+            >
+              <span className="tracking-widest">完成今日巡查</span>
+            </button>
+            <p className="text-center text-xs text-gray-400 mt-2">
+              已完成 {completedCount} 家店铺
+            </p>
+          </div>
+        )}
       </main>
     </div>
   )
@@ -109,17 +89,33 @@ export default function App() {
   const [selectedGrid, setSelectedGrid] = useState(null)
   const [document, setDocument] = useState(null)
   const [lastShopName, setLastShopName] = useState('')
-  const [refreshKey, setRefreshKey] = useState(0)
+  const [dayInspections, setDayInspections] = useState({})
 
-  function handleStart(folderName) {
+  function handleStart(folderName, resumePending) {
     setRootFolder(folderName)
+    if (resumePending) {
+      const pending = getPendingDay()
+      setDayInspections(pending?.inspections || {})
+    } else {
+      setDayInspections({})
+    }
     setPage('home')
   }
 
+  function handleAbandonDay() {
+    clearPendingDay()
+    setDayInspections({})
+    setPage('landing')
+    window.scrollTo(0, 0)
+  }
+
   function handleSelectShop(doc) {
-    const folder = getFolder(rootFolder)
-    const existing = folder?.inspections?.find((ins) => ins.docName === doc.docName)
-    const mergedDoc = existing ? { ...doc, photos: existing.photos } : doc
+    // 优先从今日巡查中恢复，其次从历史记录
+    const existing = dayInspections[doc.docName] || (() => {
+      const folder = getFolder(rootFolder)
+      return folder?.inspections?.find((ins) => ins.docName === doc.docName)
+    })()
+    const mergedDoc = existing ? { ...doc, photos: existing.photos || {} } : doc
     setDocument(mergedDoc)
     setLastShopName(doc.shopName)
     setPage('shoot')
@@ -132,9 +128,21 @@ export default function App() {
   function handleComplete() {
     const completedDoc = { ...document, completed: true }
     setDocument(completedDoc)
-    saveHistory({ folderName: rootFolder, inspections: [completedDoc] })
+    const updated = { ...dayInspections, [completedDoc.docName]: completedDoc }
+    setDayInspections(updated)
+    savePendingDay({ folderName: rootFolder, inspections: updated })
     setPage('shop')
-    setRefreshKey((k) => k + 1)
+  }
+
+  function handleFinishDay() {
+    const inspections = Object.values(dayInspections)
+    if (inspections.length > 0) {
+      saveHistory({ folderName: rootFolder, inspections, dayCompleted: true })
+    }
+    clearPendingDay()
+    setDayInspections({})
+    setPage('landing')
+    window.scrollTo(0, 0)
   }
 
   function handleOpenHistory(folderName) {
@@ -147,32 +155,31 @@ export default function App() {
     setPage('history-shoot')
   }
 
-  // 计算完成状态（refreshKey 强制刷新）
-  const _rk = refreshKey
-  const folder = getFolder(rootFolder)
+  // 从今日巡查中计算完成状态
   const completedMap = {}
   const pendingMap = {}
-  if (folder?.inspections) {
-    folder.inspections.forEach((ins) => {
-      const hasPhotos = Object.values(ins.photos || {}).some((arr) => arr.length > 0)
-      if (ins.completed && hasPhotos) {
-        completedMap[ins.shopName] = true
-      } else if (hasPhotos) {
-        pendingMap[ins.shopName] = true
-      }
-    })
-  }
+  Object.values(dayInspections).forEach((ins) => {
+    const hasPhotos = Object.values(ins.photos || {}).some((arr) => arr.length > 0)
+    if (ins.completed && hasPhotos) {
+      completedMap[ins.shopName] = true
+    } else if (hasPhotos) {
+      pendingMap[ins.shopName] = true
+    }
+  })
+  const completedCount = Object.keys(completedMap).length
 
-  // 带进度数据的 grids
   const grids = getGrids()
-  const gridsWithShops = grids.map((g) => ({
-    ...g,
-    shops: getShopsByGrid(g.id),
-  }))
 
   let content
   if (page === 'landing') {
-    content = <Landing onStart={handleStart} onOpenHistory={handleOpenHistory} />
+    content = (
+      <Landing
+        onStart={handleStart}
+        onOpenHistory={handleOpenHistory}
+        onResumePending={(folderName) => handleStart(folderName, true)}
+        pendingDay={getPendingDay()}
+      />
+    )
   } else if (page === 'history') {
     content = (
       <HistoryDetail
@@ -209,8 +216,8 @@ export default function App() {
     content = (
       <ShootPage
         document={document}
-        onBack={() => { setPage('shop'); setRefreshKey((k) => k + 1); window.scrollTo(0, 0) }}
-        onBackToGrid={() => { setPage('home'); setRefreshKey((k) => k + 1); window.scrollTo(0, 0) }}
+        onBack={() => { setPage('shop'); window.scrollTo(0, 0) }}
+        onBackToGrid={() => { setPage('home'); window.scrollTo(0, 0) }}
         onGoHome={() => { setPage('landing'); window.scrollTo(0, 0) }}
         onUpdateDocument={handleUpdateDocument}
         onComplete={handleComplete}
@@ -219,10 +226,11 @@ export default function App() {
   } else {
     content = (
       <HomePage
-        grids={gridsWithShops}
+        grids={grids}
         onSelectGrid={(gridId) => { setSelectedGrid(gridId); setPage('shop') }}
         onGoHome={() => { setPage('landing'); window.scrollTo(0, 0) }}
-        completedMap={completedMap}
+        completedCount={completedCount}
+        onFinishDay={handleFinishDay}
       />
     )
   }

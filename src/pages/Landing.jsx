@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { getHistory } from '../utils/history'
+import { getHistory, getFolder } from '../utils/history'
 
 function getTodayStr() {
   const d = new Date()
@@ -9,9 +9,13 @@ function getTodayStr() {
   return `${y}-${m}-${day}`
 }
 
-export default function Landing({ onStart, onOpenHistory }) {
+export default function Landing({ onStart, onOpenHistory, onResumePending, pendingDay }) {
   const [folderName, setFolderName] = useState(getTodayStr())
   const history = getHistory()
+
+  const pendingCount = pendingDay?.inspections
+    ? Object.values(pendingDay.inspections).filter((ins) => ins.completed).length
+    : 0
 
   return (
     <div className="min-h-screen bg-slate-800 flex flex-col items-center px-6 py-10">
@@ -26,26 +30,53 @@ export default function Landing({ onStart, onOpenHistory }) {
         <p className="text-slate-300 text-sm">三小场所照片采集系统</p>
       </div>
 
-      {/* 总文件夹名称 */}
+      {/* 待完成巡查 提示 */}
+      {pendingDay && (
+        <div className="w-full max-w-xs mb-5">
+          <button
+            onClick={() => onResumePending(pendingDay.folderName)}
+            className="w-full flex items-center gap-3 bg-amber-500/15 border border-amber-500/30 rounded-xl px-4 py-3.5 text-left hover:bg-amber-500/25 active:scale-[0.97] transition-all duration-150"
+          >
+            <span className="text-lg">⏳</span>
+            <div>
+              <p className="text-amber-300 text-sm font-medium">{pendingDay.folderName}</p>
+              <p className="text-amber-400/70 text-xs mt-0.5">
+                待完成 · {pendingCount} 家已完成
+              </p>
+            </div>
+            <span className="ml-auto text-amber-400 text-xs">继续 ›</span>
+          </button>
+        </div>
+      )}
+
+      {/* 新建巡查文件夹 */}
       <div className="w-full max-w-xs mb-6">
         <label className="block text-slate-300 text-xs mb-2">
-          巡查日期（电脑端总文件夹名）
+          文件名
         </label>
         <input
           type="text"
           value={folderName}
           onChange={(e) => setFolderName(e.target.value)}
           className="w-full px-4 py-3 rounded-xl bg-white/10 text-white text-center text-base border border-white/10 focus:border-white/30 focus:outline-none transition-colors"
-          placeholder="输入日期，如 2026-06-13"
+          placeholder="输入文件夹名，如 2026-06-14"
         />
       </div>
 
       {/* 开始按钮 */}
       <button
-        onClick={() => onStart(folderName.trim() || getTodayStr())}
+        onClick={() => {
+          const name = folderName.trim() || getTodayStr()
+          const existing = getFolder(name) || getHistory().find((e) => e.folderName === name)
+          if (existing) {
+            alert('该文件夹名已存在，请更换名称')
+            return
+          }
+          onStart(name)
+        }}
         className="w-full max-w-xs py-3.5 rounded-xl bg-white text-slate-800 font-bold text-base hover:shadow-xl hover:-translate-y-0.5 active:scale-[0.95] transition-all duration-150 shadow-lg"
       >
-        开始巡查
+        新建巡查
       </button>
 
       {/* 历史记录 */}

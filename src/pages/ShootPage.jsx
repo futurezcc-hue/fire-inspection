@@ -199,7 +199,14 @@ export default function ShootPage({ document, onBack, onBackToGrid, onGoHome, on
             </button>
           ) : (
             <button
-              onClick={onComplete}
+              onClick={() => {
+                const total = Object.values(photos).reduce((s, arr) => s + (arr?.length || 0), 0)
+                if (total === 0) {
+                  alert('请至少拍摄一张照片')
+                  return
+                }
+                onComplete()
+              }}
               className="w-full py-3.5 rounded-xl text-white font-semibold text-base bg-slate-700 hover:bg-slate-600 hover:shadow-xl hover:-translate-y-0.5 active:scale-[0.96] active:bg-slate-800 shadow-lg shadow-slate-200 transition-all duration-150"
             >
               <span className="tracking-widest">完成巡查</span>

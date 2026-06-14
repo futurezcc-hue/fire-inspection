@@ -1,4 +1,5 @@
 const KEY = 'fire_inspection_history'
+const PENDING_KEY = 'fire_inspection_pending'
 
 export function getHistory() {
   try {
@@ -39,4 +40,21 @@ export function getFolder(folderName) {
 export function deleteFolder(folderName) {
   const list = getHistory().filter((e) => e.folderName !== folderName)
   localStorage.setItem(KEY, JSON.stringify(list))
+}
+
+export function getPendingDay() {
+  try {
+    const raw = localStorage.getItem(PENDING_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
+export function savePendingDay(entry) {
+  localStorage.setItem(PENDING_KEY, JSON.stringify(entry))
+}
+
+export function clearPendingDay() {
+  localStorage.removeItem(PENDING_KEY)
 }
