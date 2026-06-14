@@ -5,6 +5,8 @@ import Landing from './pages/Landing'
 import ShopList from './pages/ShopList'
 import ShootPage from './pages/ShootPage'
 import HistoryDetail from './pages/HistoryDetail'
+import Dashboard from './pages/Dashboard'
+import BottomNav from './components/BottomNav'
 
 function HomePage({ grids, onSelectGrid, onGoHome, completedCount, onFinishDay }) {
   return (
@@ -85,6 +87,7 @@ function HomePage({ grids, onSelectGrid, onGoHome, completedCount, onFinishDay }
 
 export default function App() {
   const [page, setPage] = useState('landing')
+  const [tab, setTab] = useState('dashboard')
   const [rootFolder, setRootFolder] = useState('')
   const [selectedGrid, setSelectedGrid] = useState(null)
   const [document, setDocument] = useState(null)
@@ -239,5 +242,10 @@ export default function App() {
     )
   }
 
-  return content
+  return (
+    <div className="pb-10">
+      {tab === 'dashboard' ? <Dashboard /> : content}
+      <BottomNav activeTab={tab} onSwitch={setTab} />
+    </div>
+  )
 }
