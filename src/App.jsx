@@ -98,15 +98,16 @@ export default function App() {
       setDayInspections(pending?.inspections || {})
     } else {
       setDayInspections({})
+      savePendingDay({ folderName, inspections: {} })
     }
     setPage('home')
+    window.scrollTo(0, 0)
   }
 
   function handleAbandonDay() {
     clearPendingDay()
     setDayInspections({})
     setPage('landing')
-    window.scrollTo(0, 0)
   }
 
   function handleSelectShop(doc) {
@@ -119,6 +120,7 @@ export default function App() {
     setDocument(mergedDoc)
     setLastShopName(doc.shopName)
     setPage('shoot')
+    window.scrollTo(0, 0)
   }
 
   function handleUpdateDocument(updatedDoc) {
@@ -142,17 +144,18 @@ export default function App() {
     clearPendingDay()
     setDayInspections({})
     setPage('landing')
-    window.scrollTo(0, 0)
   }
 
   function handleOpenHistory(folderName) {
     setRootFolder(folderName)
     setPage('history')
+    window.scrollTo(0, 0)
   }
 
   function handleOpenShopFromHistory(ins) {
     setDocument(ins)
     setPage('history-shoot')
+    window.scrollTo(0, 0)
   }
 
   // 从今日巡查中计算完成状态
@@ -177,6 +180,7 @@ export default function App() {
         onStart={handleStart}
         onOpenHistory={handleOpenHistory}
         onResumePending={(folderName) => handleStart(folderName, true)}
+        onAbandonDay={handleAbandonDay}
         pendingDay={getPendingDay()}
       />
     )
@@ -184,7 +188,7 @@ export default function App() {
     content = (
       <HistoryDetail
         folderName={rootFolder}
-        onBack={() => { setPage('landing'); window.scrollTo(0, 0) }}
+        onBack={() => setPage('landing')}
         onOpenShop={handleOpenShopFromHistory}
       />
     )
@@ -192,9 +196,9 @@ export default function App() {
     content = (
       <ShootPage
         document={document}
-        onBack={() => { setPage('history'); window.scrollTo(0, 0) }}
-        onBackToGrid={() => { setPage('history'); window.scrollTo(0, 0) }}
-        onGoHome={() => { setPage('landing'); window.scrollTo(0, 0) }}
+        onBack={() => setPage('history')}
+        onBackToGrid={() => setPage('history')}
+        onGoHome={() => setPage('landing')}
         onUpdateDocument={handleUpdateDocument}
         fromHistory
         readonly
@@ -204,9 +208,9 @@ export default function App() {
     content = (
       <ShopList
         gridId={selectedGrid}
-        onBack={() => { setPage('home'); window.scrollTo(0, 0) }}
+        onBack={() => setPage('home')}
         onSelectShop={handleSelectShop}
-        onGoHome={() => { setPage('landing'); window.scrollTo(0, 0) }}
+        onGoHome={() => setPage('landing')}
         completedMap={completedMap}
         pendingMap={pendingMap}
         scrollToShop={lastShopName}
@@ -216,9 +220,9 @@ export default function App() {
     content = (
       <ShootPage
         document={document}
-        onBack={() => { setPage('shop'); window.scrollTo(0, 0) }}
-        onBackToGrid={() => { setPage('home'); window.scrollTo(0, 0) }}
-        onGoHome={() => { setPage('landing'); window.scrollTo(0, 0) }}
+        onBack={() => setPage('shop')}
+        onBackToGrid={() => setPage('home')}
+        onGoHome={() => setPage('landing')}
         onUpdateDocument={handleUpdateDocument}
         onComplete={handleComplete}
       />
@@ -227,8 +231,8 @@ export default function App() {
     content = (
       <HomePage
         grids={grids}
-        onSelectGrid={(gridId) => { setSelectedGrid(gridId); setPage('shop') }}
-        onGoHome={() => { setPage('landing'); window.scrollTo(0, 0) }}
+        onSelectGrid={(gridId) => { setSelectedGrid(gridId); setPage('shop'); window.scrollTo(0, 0) }}
+        onGoHome={() => setPage('landing')}
         completedCount={completedCount}
         onFinishDay={handleFinishDay}
       />

@@ -9,7 +9,7 @@ function getTodayStr() {
   return `${y}-${m}-${day}`
 }
 
-export default function Landing({ onStart, onOpenHistory, onResumePending, pendingDay }) {
+export default function Landing({ onStart, onOpenHistory, onResumePending, onAbandonDay, pendingDay }) {
   const [folderName, setFolderName] = useState(getTodayStr())
   const history = getHistory()
 
@@ -33,19 +33,28 @@ export default function Landing({ onStart, onOpenHistory, onResumePending, pendi
       {/* 待完成巡查 提示 */}
       {pendingDay && (
         <div className="w-full max-w-xs mb-5">
-          <button
-            onClick={() => onResumePending(pendingDay.folderName)}
-            className="w-full flex items-center gap-3 bg-amber-500/15 border border-amber-500/30 rounded-xl px-4 py-3.5 text-left hover:bg-amber-500/25 active:scale-[0.97] transition-all duration-150"
-          >
-            <span className="text-lg">⏳</span>
-            <div>
-              <p className="text-amber-300 text-sm font-medium">{pendingDay.folderName}</p>
-              <p className="text-amber-400/70 text-xs mt-0.5">
-                待完成 · {pendingCount} 家已完成
-              </p>
-            </div>
-            <span className="ml-auto text-amber-400 text-xs">继续 ›</span>
-          </button>
+          <div className="flex items-center gap-2 bg-amber-500/15 border border-amber-500/30 rounded-xl px-4 py-3.5">
+            <button
+              onClick={() => onResumePending(pendingDay.folderName)}
+              className="flex-1 flex items-center gap-3 text-left active:scale-[0.97] transition-all duration-150"
+            >
+              <span className="text-lg">⏳</span>
+              <div>
+                <p className="text-amber-300 text-sm font-medium">{pendingDay.folderName}</p>
+                <p className="text-amber-400/70 text-xs mt-0.5">
+                  待完成 · {pendingCount} 家已完成
+                </p>
+              </div>
+              <span className="ml-auto text-amber-400 text-xs">继续 ›</span>
+            </button>
+            <button
+              onClick={onAbandonDay}
+              className="shrink-0 w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 text-sm flex items-center justify-center active:scale-90 transition-transform"
+              title="取消"
+            >
+              ✕
+            </button>
+          </div>
         </div>
       )}
 
