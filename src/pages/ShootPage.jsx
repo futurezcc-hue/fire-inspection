@@ -85,9 +85,7 @@ export default function ShootPage({ document, onBack, onBackToGrid, onGoHome, on
       {/* 顶部导航 */}
       <header className="bg-slate-800 text-white px-4 py-3 safe-top">
         <div className="flex items-center gap-3">
-          <button onClick={onGoHome} className="shrink-0 active:scale-90 transition-transform">
-            <img src="/logo.jpg" alt="logo" className="w-7 h-7 rounded-md object-cover" />
-          </button>
+          <button onClick={onBack} className="w-7 h-7 rounded-md bg-white/20 flex items-center justify-center text-sm active:scale-90 transition-transform shrink-0">←</button>
           <div className="min-w-0">
             <h1 className="text-base font-bold leading-tight truncate">{document.docName}</h1>
             <p className="text-xs text-slate-300 truncate">{document.gridName}</p>
@@ -97,26 +95,6 @@ export default function ShootPage({ document, onBack, onBackToGrid, onGoHome, on
 
       {/* 主体内容 */}
       <main className="max-w-md mx-auto px-4 py-5">
-        {/* 步骤提示 */}
-        {!fromHistory && (
-          <div className="flex items-center gap-3 mb-5">
-            <button onClick={onBackToGrid} className="flex items-center gap-1.5 active:scale-95 transition-transform">
-              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-green-500 text-white text-xs font-bold">✓</span>
-              <span className="text-sm text-gray-400">选择网格</span>
-            </button>
-            <div className="flex-1 h-px bg-gray-200" />
-            <button onClick={onBack} className="flex items-center gap-1.5 active:scale-95 transition-transform">
-              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-green-500 text-white text-xs font-bold">✓</span>
-              <span className="text-sm text-gray-400">选择店铺</span>
-            </button>
-            <div className="flex-1 h-px bg-gray-200" />
-            <div className="flex items-center gap-1.5">
-              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-700 text-white text-xs font-bold">3</span>
-              <span className="text-sm font-medium text-gray-800">拍摄</span>
-            </div>
-          </div>
-        )}
-
         {/* 文档信息 */}
         <div className="rounded-xl bg-white border border-gray-100 px-4 py-3.5 mb-5">
           <div className="flex items-center gap-2 mb-1">

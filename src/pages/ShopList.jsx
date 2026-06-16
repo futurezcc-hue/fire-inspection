@@ -1,11 +1,17 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { getShopsByGrid, getGridName } from '../data/shops'
 
 const CATEGORIES = ['门店照', '灭火器照', '烟雾感应器照', '应急灯安全出口灯照', '现场照片', '隐患照']
 
 export default function ShopList({ gridId, onBack, onSelectShop, onGoHome, completedMap, pendingMap, scrollToShop }) {
-  const shops = getShopsByGrid(gridId)
+  const allShops = getShopsByGrid(gridId)
   const gridName = getGridName(gridId)
+  const [search, setSearch] = useState('')
+  const [showSearch, setShowSearch] = useState(false)
+
+  const shops = search.trim()
+    ? allShops.filter((s) => s.name.includes(search.trim()) || s.address.includes(search.trim()))
+    : allShops
 
   useEffect(() => {
     if (scrollToShop) {
@@ -37,38 +43,40 @@ export default function ShopList({ gridId, onBack, onSelectShop, onGoHome, compl
       {/* 顶部导航 */}
       <header className="bg-slate-800 text-white px-4 py-3 safe-top">
         <div className="flex items-center gap-3">
-          <button onClick={onGoHome} className="shrink-0 active:scale-90 transition-transform">
-            <img src="/logo.jpg" alt="logo" className="w-7 h-7 rounded-md object-cover" />
-          </button>
-          <div>
-            <h1 className="text-base font-bold leading-tight">{gridName}</h1>
-            <p className="text-xs text-slate-300">共 {shops.length} 家三小场所</p>
+          <button onClick={onBack} className="w-7 h-7 rounded-md bg-white/20 flex items-center justify-center text-sm active:scale-90 transition-transform shrink-0">←</button>
+          <div className="min-w-0 flex-1">
+            {showSearch ? (
+              <input
+                autoFocus
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onBlur={() => { if (!search) setShowSearch(false) }}
+                placeholder="搜索店名或地址..."
+                className="w-full bg-white/10 text-white text-sm rounded-lg px-2 py-1 border border-white/20 focus:border-white/40 focus:outline-none placeholder:text-slate-400"
+              />
+            ) : (
+              <>
+                <h1 className="text-base font-bold leading-tight">{gridName}</h1>
+                <p className="text-xs text-slate-300">共 {allShops.length} 家三小场所</p>
+              </>
+            )}
           </div>
+          {!showSearch && (
+            <button onClick={() => setShowSearch(true)} className="w-7 h-7 rounded-md bg-white/20 flex items-center justify-center text-sm active:scale-90 transition-transform shrink-0">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>
+            </button>
+          )}
         </div>
       </header>
 
       {/* 主体内容 */}
       <main className="max-w-md mx-auto px-4 py-5">
-        {/* 步骤提示 */}
-        <div className="flex items-center gap-3 mb-5">
-          <button onClick={onBack} className="flex items-center gap-1.5 active:scale-95 transition-transform">
-            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-green-500 text-white text-xs font-bold">✓</span>
-            <span className="text-sm text-gray-400">选择网格</span>
-          </button>
-          <div className="flex-1 h-px bg-gray-200" />
-          <div className="flex items-center gap-1.5">
-            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-700 text-white text-xs font-bold">2</span>
-            <span className="text-sm font-medium text-gray-800">选择店铺</span>
-          </div>
-          <div className="flex-1 h-px bg-gray-200" />
-          <div className="flex items-center gap-1.5 opacity-40">
-            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-gray-300 text-white text-xs font-bold">3</span>
-            <span className="text-sm text-gray-400">拍摄</span>
-          </div>
-        </div>
-
         <h2 className="text-base font-semibold text-gray-700 mb-3">请选择三小场所</h2>
 
+        {shops.length === 0 && search && (
+          <p className="text-sm text-gray-400 text-center py-8">未找到"{search}"相关店铺</p>
+        )}
         <div className="space-y-2.5">
           {shops.map((shop) => {
             const isCompleted = completedMap[shop.name] || false

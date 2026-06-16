@@ -58,3 +58,25 @@ export function savePendingDay(entry) {
 export function clearPendingDay() {
   localStorage.removeItem(PENDING_KEY)
 }
+
+// ====== 今日计划 ======
+const PLAN_KEY = 'fire_inspection_today_plan'
+
+export function getTodayPlan(date) {
+  try {
+    const raw = localStorage.getItem(PLAN_KEY)
+    const all = raw ? JSON.parse(raw) : {}
+    return all[date] || []
+  } catch {
+    return []
+  }
+}
+
+export function saveTodayPlan(date, shops) {
+  try {
+    const raw = localStorage.getItem(PLAN_KEY)
+    const all = raw ? JSON.parse(raw) : {}
+    all[date] = shops
+    localStorage.setItem(PLAN_KEY, JSON.stringify(all))
+  } catch {}
+}

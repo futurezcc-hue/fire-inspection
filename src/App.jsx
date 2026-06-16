@@ -6,6 +6,7 @@ import ShopList from './pages/ShopList'
 import ShootPage from './pages/ShootPage'
 import HistoryDetail from './pages/HistoryDetail'
 import Dashboard from './pages/Dashboard'
+import PlanPage from './pages/PlanPage'
 import BottomNav from './components/BottomNav'
 
 function HomePage({ grids, onSelectGrid, onGoHome, completedCount, onFinishDay }) {
@@ -13,9 +14,7 @@ function HomePage({ grids, onSelectGrid, onGoHome, completedCount, onFinishDay }
     <div className="min-h-screen bg-gray-50">
       <header className="bg-slate-800 text-white px-4 py-3 safe-top">
         <div className="flex items-center gap-3">
-          <button onClick={onGoHome} className="shrink-0 active:scale-90 transition-transform">
-            <img src="/logo.jpg" alt="logo" className="w-7 h-7 rounded-md object-cover" />
-          </button>
+          <button onClick={onGoHome} className="w-7 h-7 rounded-md bg-white/20 flex items-center justify-center text-sm active:scale-90 transition-transform">←</button>
           <div>
             <h1 className="text-base font-bold leading-tight">消防巡查</h1>
             <p className="text-xs text-slate-300">三小场所照片采集</p>
@@ -242,9 +241,20 @@ export default function App() {
     )
   }
 
+  let display
+  if (tab === 'dashboard') {
+    display = <Dashboard />
+  } else if (tab === 'plan') {
+    display = <PlanPage onStartInspect={(plan) => {
+      // 将计划中的第一家店铺作为起始
+    }} />
+  } else {
+    display = content
+  }
+
   return (
     <div className="pb-10">
-      {tab === 'dashboard' ? <Dashboard /> : content}
+      {display}
       <BottomNav activeTab={tab} onSwitch={setTab} />
     </div>
   )

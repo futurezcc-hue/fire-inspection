@@ -13,6 +13,20 @@ function DashboardIcon({ filled }) {
   )
 }
 
+function PlanIcon({ filled }) {
+  return filled ? (
+    <svg className="w-4 h-4 mb-0.5" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M19 3h-1V1h-2v2H8V1H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-2 12H7v-2h10v2zm0-4H7V9h10v2z" />
+    </svg>
+  ) : (
+    <svg className="w-4 h-4 mb-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" />
+      <path d="M16 2v4M8 2v4M3 10h18" />
+      <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" />
+    </svg>
+  )
+}
+
 function InspectIcon({ filled }) {
   return filled ? (
     <svg className="w-4 h-4 mb-0.5" viewBox="0 0 24 24">
@@ -40,6 +54,15 @@ export default function BottomNav({ activeTab, onSwitch }) {
         >
           <DashboardIcon filled={activeTab === 'dashboard'} />
           <span className="text-[10px] font-medium">看板</span>
+        </button>
+        <button
+          onClick={() => onSwitch('plan')}
+          className={`flex-1 flex flex-col items-center transition-colors ${
+            activeTab === 'plan' ? 'text-slate-800' : 'text-gray-400'
+          }`}
+        >
+          <PlanIcon filled={activeTab === 'plan'} />
+          <span className="text-[10px] font-medium">计划</span>
         </button>
         <button
           onClick={() => onSwitch('inspect')}
