@@ -92,6 +92,7 @@ export default function App() {
   const [document, setDocument] = useState(null)
   const [lastShopName, setLastShopName] = useState('')
   const [dayInspections, setDayInspections] = useState({})
+  const [plannedShops, setPlannedShops] = useState(null)
 
   function handleStart(folderName, resumePending) {
     setRootFolder(folderName)
@@ -210,12 +211,13 @@ export default function App() {
     content = (
       <ShopList
         gridId={selectedGrid}
-        onBack={() => setPage('home')}
+        onBack={() => { setPage('home'); setPlannedShops(null) }}
         onSelectShop={handleSelectShop}
-        onGoHome={() => setPage('landing')}
+        onGoHome={() => { setPage('landing'); setPlannedShops(null) }}
         completedMap={completedMap}
         pendingMap={pendingMap}
         scrollToShop={lastShopName}
+        plannedShops={plannedShops}
       />
     )
   } else if (page === 'shoot') {
@@ -245,8 +247,14 @@ export default function App() {
   if (tab === 'dashboard') {
     display = <Dashboard />
   } else if (tab === 'plan') {
-    display = <PlanPage onStartInspect={(plan) => {
-      // 将计划中的第一家店铺作为起始
+    display = <PlanPage onStartInspect={(folderName, plan) => {
+      setRootFolder(folderName)
+      setDayInspections({})
+      setPlannedShops(plan)
+      savePendingDay({ folderName, inspections: {} })
+      setTab('inspect')
+      setPage('shop')
+      window.scrollTo(0, 0)
     }} />
   } else {
     display = content

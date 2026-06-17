@@ -3,9 +3,11 @@ import { getShopsByGrid, getGridName } from '../data/shops'
 
 const CATEGORIES = ['门店照', '灭火器照', '烟雾感应器照', '应急灯安全出口灯照', '现场照片', '隐患照']
 
-export default function ShopList({ gridId, onBack, onSelectShop, onGoHome, completedMap, pendingMap, scrollToShop }) {
-  const allShops = getShopsByGrid(gridId)
-  const gridName = getGridName(gridId)
+export default function ShopList({ gridId, onBack, onSelectShop, onGoHome, completedMap, pendingMap, scrollToShop, plannedShops }) {
+  const allShops = plannedShops
+    ? plannedShops.map((p) => ({ id: p.shopName, name: p.shopName, address: p.shopAddress, industry: '', gridName: p.gridName }))
+    : getShopsByGrid(gridId)
+  const gridName = plannedShops ? '今日计划' : getGridName(gridId)
   const [search, setSearch] = useState('')
   const [showSearch, setShowSearch] = useState(false)
 
@@ -30,7 +32,7 @@ export default function ShopList({ gridId, onBack, onSelectShop, onGoHome, compl
     })
 
     onSelectShop({
-      gridName,
+      gridName: shop.gridName || gridName,
       shopName: shop.name,
       shopAddress: shop.address,
       docName,

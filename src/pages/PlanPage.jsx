@@ -30,6 +30,8 @@ export default function PlanPage({ onStartInspect }) {
   const [viewGrid, setViewGrid] = useState(null)
   const [addGrid, setAddGrid] = useState(null)
   const [page, setPage] = useState('overview')
+  const [showNameModal, setShowNameModal] = useState(false)
+  const [startName, setStartName] = useState(getTodayStr())
 
   const today = getTodayStr()
   const [plan, setPlan] = useState(() => getTodayPlan(today))
@@ -65,10 +67,16 @@ export default function PlanPage({ onStartInspect }) {
     })
   }
 
+  function handleRemovePlan(index) {
+    const updated = plan.filter((_, i) => i !== index)
+    setPlan(updated)
+    saveTodayPlan(today, updated)
+  }
+
   function handleStartPlan() {
-    if (plan.length > 0) {
-      onStartInspect(plan)
-    }
+    if (plan.length === 0) return
+    setStartName(getTodayStr())
+    setShowNameModal(true)
   }
 
   const plannedShopNames = new Set(plan.map((p) => p.shopName))
@@ -281,6 +289,12 @@ export default function PlanPage({ onStartInspect }) {
                   <p className="text-sm font-medium text-gray-800 truncate">{p.shopName}</p>
                   <p className="text-xs text-gray-400 truncate">{p.gridName} · {p.shopAddress}</p>
                 </div>
+                <button
+                  onClick={() => handleRemovePlan(i)}
+                  className="w-6 h-6 rounded-full bg-red-100 text-red-400 text-xs flex items-center justify-center active:scale-90 transition-transform shrink-0"
+                >
+                  ×
+                </button>
               </div>
             ))}
             <button
@@ -302,6 +316,42 @@ export default function PlanPage({ onStartInspect }) {
         >
           + 添加今日计划
         </button>
+
+        {/* 命名弹窗 */}
+        {showNameModal && (
+          <div className="fixed inset-0 z-50 bg-black/50 flex items-end justify-center" onClick={() => setShowNameModal(false)}>
+            <div className="bg-white rounded-t-2xl w-full max-w-md px-5 py-5" onClick={(e) => e.stopPropagation()}>
+              <h3 className="font-semibold text-gray-800 text-sm mb-3">创建巡查文件夹</h3>
+              <input
+                autoFocus
+                type="text"
+                value={startName}
+                onChange={(e) => setStartName(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-center text-base focus:border-slate-400 focus:outline-none"
+                placeholder="输入文件夹名"
+              />
+              <div className="flex gap-2 mt-3">
+                <button
+                  onClick={() => setShowNameModal(false)}
+                  className="flex-1 py-2.5 rounded-lg text-sm font-medium text-gray-500 bg-gray-100 active:scale-95"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={() => {
+                    const name = startName.trim()
+                    if (!name) return
+                    setShowNameModal(false)
+                    onStartInspect(name, plan)
+                  }}
+                  className="flex-1 py-2.5 rounded-lg text-sm font-medium text-white bg-slate-700 active:scale-95"
+                >
+                  开始巡查
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   )
