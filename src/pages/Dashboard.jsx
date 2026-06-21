@@ -1,15 +1,11 @@
 import { useState } from 'react'
-import { getGrids, getShopsByGrid, getHazardStats, getHazardTypes } from '../data/shops'
+import { getHazardTypes } from '../api'
+import { getGridList, getShopsByGrid, getShopList } from '../api'
 import { getCurrentQuarter, getQuarterLabel } from '../utils/time'
 import DonutChart from '../components/DonutChart'
 
 function getQuarterStats(quarter) {
-  const shopList = []
-  getGrids().forEach((g) => {
-    getShopsByGrid(g.id).forEach((s) => {
-      if (s.quarter === quarter) shopList.push(s)
-    })
-  })
+  const shopList = getShopList().filter((s) => s.quarter === quarter)
   const newCount = shopList.filter((s) => s.isNew).length
   const closedCount = shopList.filter((s) => s.closed).length
   const completedCount = shopList.filter((s) => s.completed).length
@@ -27,12 +23,8 @@ function getQuarterStats(quarter) {
 }
 
 function getTableStats() {
-  const grids = getGrids()
-  const shopList = []
-  grids.forEach((g) => {
-    const shops = getShopsByGrid(g.id)
-    shops.forEach((s) => shopList.push(s))
-  })
+  const grids = getGridList()
+  const shopList = getShopList()
 
   const byIndustry = {}
   shopList.forEach((s) => {
@@ -43,15 +35,24 @@ function getTableStats() {
   const closedCount = shopList.filter((s) => s.closed).length
   const completedCount = shopList.filter((s) => s.completed).length
 
+  // 隐患统计
+  const byHazard = {}
+  getHazardTypes().forEach((h) => { byHazard[h] = 0 })
+  shopList.forEach((s) => {
+    ;(s.hazards || []).forEach((h) => {
+      if (byHazard[h] !== undefined) byHazard[h]++
+    })
+  })
+
   return {
     grids,
     shopCount: shopList.length,
     shopList,
     byIndustry,
-    byHazard: getHazardStats(),
+    byHazard,
     newCount,
     closedCount,
-    hazardTotal: Object.values(getHazardStats()).reduce((s, n) => s + n, 0),
+    hazardTotal: Object.values(byHazard).reduce((s, n) => s + n, 0),
     completedCount,
   }
 }
@@ -66,7 +67,7 @@ export default function Dashboard() {
 
   // 子页面：总台账（网格列表）
   if (page === 'ledger') {
-    const allGrids = table.grids.map((g) => ({
+    const allGrids = getGridList().map((g) => ({
       ...g,
       shops: getShopsByGrid(g.id),
     }))
